@@ -3,14 +3,18 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 if (!getApps().length) {
   try {
+    let pk = process.env.FIREBASE_PRIVATE_KEY || '';
+    if (pk.startsWith('"') && pk.endsWith('"')) {
+      try { pk = JSON.parse(pk); } catch (e) { pk = pk.replace(/^"|"$/g, '').replace(/\\n/g, '\n'); }
+    } else {
+      pk = pk.replace(/\\n/g, '\n');
+    }
+
     initializeApp({
       credential: cert({
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        // Handle newlines in the private key if needed
-        privateKey: process.env.FIREBASE_PRIVATE_KEY
-          ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/gm, '\n').replace(/^"|"$/g, '')
-          : undefined,
+        privateKey: pk,
       }),
     });
     console.log('Firebase Admin Initialized successfully.');
