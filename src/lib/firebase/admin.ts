@@ -5,10 +5,9 @@ if (!getApps().length) {
   try {
     let pk = process.env.FIREBASE_PRIVATE_KEY || '';
     if (pk.startsWith('"') && pk.endsWith('"')) {
-      try { pk = JSON.parse(pk); } catch (e) { pk = pk.replace(/^"|"$/g, '').replace(/\\n/g, '\n'); }
-    } else {
-      pk = pk.replace(/\\n/g, '\n');
+      pk = pk.substring(1, pk.length - 1);
     }
+    pk = pk.replace(/\\n/g, '\n').replace(/\r/g, '');
 
     initializeApp({
       credential: cert({
