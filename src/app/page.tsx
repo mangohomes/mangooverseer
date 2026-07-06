@@ -27,7 +27,7 @@ export default function Dashboard() {
   useEffect(() => {
     try {
       if (!db) {
-        setFirebaseError(true);
+        setTimeout(() => setFirebaseError(true), 0);
         return;
       }
       const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
@@ -46,9 +46,36 @@ export default function Dashboard() {
       return () => unsubscribe();
     } catch (e) {
       console.warn("Firebase not configured:", e);
-      setFirebaseError(true);
+      setTimeout(() => setFirebaseError(true), 0);
     }
   }, []);
+
+  const handleRunWorker = async (task: any) => {
+    try {
+      const taskIndex = tasks.findIndex(t => t.id === task.id);
+      const chatHistory = tasks
+        .slice(taskIndex + 1)
+        .filter(t => (t.category === 'kitten' || !t.category) && t.status === 'completed')
+        .slice(0, 10)
+        .reverse()
+        .map(t => `Goal: ${t.title}\nDescription: ${t.description}\nResult: ${t.result}`);
+
+      const res = await fetch("/api/worker", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ 
+           taskId: task.id, 
+           taskTitle: task.title, 
+           taskDescription: task.description, 
+           chatHistory,
+           kittenId: task.category || 'kitten' 
+         })
+      });
+      if (!res.ok) alert("Worker failed. Check your GEMINI_API_KEY.");
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     // Auto-execute pending kitten tasks (wait for server confirmation to avoid NOT_FOUND errors)
@@ -77,33 +104,6 @@ export default function Dashboard() {
       console.error(error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleRunWorker = async (task: any) => {
-    try {
-      const taskIndex = tasks.findIndex(t => t.id === task.id);
-      const chatHistory = tasks
-        .slice(taskIndex + 1)
-        .filter(t => (t.category === 'kitten' || !t.category) && t.status === 'completed')
-        .slice(0, 10)
-        .reverse()
-        .map(t => `Goal: ${t.title}\nDescription: ${t.description}\nResult: ${t.result}`);
-
-      const res = await fetch("/api/worker", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ 
-           taskId: task.id, 
-           taskTitle: task.title, 
-           taskDescription: task.description, 
-           chatHistory,
-           kittenId: task.category || 'kitten' 
-         })
-      });
-      if (!res.ok) alert("Worker failed. Check your GEMINI_API_KEY.");
-    } catch (error) {
-      console.error(error);
     }
   };
 
