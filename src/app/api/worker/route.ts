@@ -151,7 +151,7 @@ If the user asks a question that requires scanning all records (like finding cli
               const queryTerms = queryStr.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
               const snapshot = await adminDb.collection('deals').get();
               const matches = snapshot.docs
-                .map(d => ({ id: d.id, ...d.data() }))
+                .map((d: any) => ({ id: d.id, ...d.data() }))
                 .filter((d: any) => {
                   const targetName = (d.name || d.clientNames || '').toLowerCase();
                   // Match if every term in the query exists somewhere in the name
