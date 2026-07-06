@@ -155,7 +155,7 @@ If the user asks a question that requires scanning all records (like finding cli
                 .filter((d: any) => {
                   const targetName = (d.name || d.clientNames || '').toLowerCase();
                   // Match if every term in the query exists somewhere in the name
-                  return queryTerms.every(term => targetName.includes(term));
+                  return queryTerms.every((term: string) => targetName.includes(term));
                 });
               
               functionResponseParts.push({

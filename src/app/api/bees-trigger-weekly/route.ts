@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     if (!beeDoc.exists) return NextResponse.json({ error: 'Bee not found' }, { status: 404 });
     const bee = beeDoc.data();
 
-    const findings = bee.weeklyFindings || [];
+    const findings = bee?.weeklyFindings || [];
     
     if (findings.length === 0) {
       return NextResponse.json({ success: true, message: "No data to summarize." });

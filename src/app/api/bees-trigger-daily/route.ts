@@ -67,7 +67,7 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
     let finalSummary = response.text;
 
     // Append to weeklyFindings
-    const currentFindings = bee.weeklyFindings || [];
+    const currentFindings = bee?.weeklyFindings || [];
     currentFindings.push({
       date: new Date().toISOString(),
       summary: finalSummary
