@@ -9,6 +9,14 @@ if (!getApps().length) {
     }
     pk = pk.replace(/\\n/g, '\n').replace(/\r/g, '');
 
+    if (pk && !pk.includes('\n')) {
+      pk = pk.replace(/-----BEGIN PRIVATE KEY-----/g, '').replace(/-----END PRIVATE KEY-----/g, '').replace(/\s+/g, '');
+      const chunks = pk.match(/.{1,64}/g) || [];
+      pk = `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----\n`;
+    } else if (pk && !pk.includes('-----BEGIN PRIVATE KEY-----')) {
+      pk = `-----BEGIN PRIVATE KEY-----\n${pk}\n-----END PRIVATE KEY-----\n`;
+    }
+
     initializeApp({
       credential: cert({
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
