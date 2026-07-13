@@ -24,6 +24,11 @@ export default function Dashboard() {
   const [syncingCRM, setSyncingCRM] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
 
+  // MLS Upload State
+  const mlsInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingMls, setUploadingMls] = useState(false);
+  const [mlsDragOver, setMlsDragOver] = useState(false);
+
   useEffect(() => {
     try {
       if (!db) {
@@ -239,6 +244,42 @@ export default function Dashboard() {
       console.error(error);
       setUploadingImage(false);
     }
+  };
+
+  const handleMlsFile = async (e: any) => {
+    e.preventDefault();
+    setMlsDragOver(false);
+    let files;
+    if (e.dataTransfer && e.dataTransfer.files) {
+      files = e.dataTransfer.files;
+    } else if (e.target && e.target.files) {
+      files = e.target.files;
+    }
+    
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    setUploadingMls(true);
+    
+    try {
+      const text = await file.text();
+      const content = text.substring(0, 15000);
+      
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mlsData: content })
+      });
+      
+      if (res.ok) {
+        alert("MLS Data successfully cached for the Listing Kitten!");
+      } else {
+        alert("Failed to save MLS data.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error reading file.");
+    }
+    setUploadingMls(false);
   };
 
   const handleCRMSync = async () => {
@@ -705,11 +746,29 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                   </div>
                 </div>
                 
-                <div className="border-2 border-dashed border-white/10 hover:border-pink-500/30 bg-[#111] rounded-xl p-12 text-center transition-all cursor-pointer group">
+                <div 
+                  onDragOver={(e) => { e.preventDefault(); setMlsDragOver(true); }}
+                  onDragLeave={(e) => { e.preventDefault(); setMlsDragOver(false); }}
+                  onDrop={handleMlsFile}
+                  onClick={() => mlsInputRef.current?.click()}
+                  className={`border-2 border-dashed ${mlsDragOver ? 'border-pink-500 bg-pink-500/10' : 'border-white/10 hover:border-pink-500/30 bg-[#111]'} rounded-xl p-12 text-center transition-all cursor-pointer group relative overflow-hidden`}
+                >
+                  <input 
+                    type="file" 
+                    accept=".csv,.xls,.xlsx" 
+                    className="hidden" 
+                    ref={mlsInputRef} 
+                    onChange={handleMlsFile} 
+                  />
+                  {uploadingMls && (
+                    <div className="absolute inset-0 bg-[#111]/80 backdrop-blur-sm flex items-center justify-center z-10">
+                      <div className="text-pink-400 font-semibold animate-pulse">Caching MLS Data...</div>
+                    </div>
+                  )}
                   <div className="text-4xl mb-3 opacity-50 group-hover:opacity-100 group-hover:-translate-y-1 transition-all duration-300">📄</div>
                   <h3 className="text-lg font-semibold text-white mb-1">Drag & Drop MLS Export Here</h3>
                   <p className="text-sm text-gray-500">Supports CSV, XLS, XLSX</p>
-                  <button className="mt-6 px-6 py-2 bg-pink-600/20 hover:bg-pink-600/40 text-pink-300 rounded-lg text-sm font-medium transition-colors border border-pink-500/30">
+                  <button className="mt-6 px-6 py-2 bg-pink-600/20 hover:bg-pink-600/40 text-pink-300 rounded-lg text-sm font-medium transition-colors border border-pink-500/30 pointer-events-none">
                     Browse Files
                   </button>
                 </div>
