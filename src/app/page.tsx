@@ -211,8 +211,33 @@ export default function Dashboard() {
         Array.from(files).map(file => {
           return new Promise((resolve) => {
             const reader = new FileReader();
+            reader.onload = (e) => {
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const MAX_SIZE = 1600;
+                
+                if (width > height && width > MAX_SIZE) {
+                  height = Math.round((height * MAX_SIZE) / width);
+                  width = MAX_SIZE;
+                } else if (height > MAX_SIZE) {
+                  width = Math.round((width * MAX_SIZE) / height);
+                  height = MAX_SIZE;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                resolve({ base64Image: dataUrl, mimeType: 'image/jpeg' });
+              };
+              img.src = e.target?.result as string;
+            };
             reader.readAsDataURL(file);
-            reader.onload = () => resolve({ base64Image: reader.result as string, mimeType: file.type });
           });
         })
       );
@@ -389,13 +414,13 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                 onClick={() => setActiveTab('kittens')}
                 className={`px-6 py-2.5 rounded-full font-medium transition-all ${activeTab === 'kittens' ? 'bg-pink-500/20 text-pink-400 border border-pink-500/50' : 'bg-white/5 text-gray-400 hover:text-white border border-transparent'}`}
               >
-                🐱 The Kittens ({kittens.length})
+                🐱 The Kittens (2)
               </button>
               <button 
                 onClick={() => setActiveTab('bees')}
                 className={`px-6 py-2.5 rounded-full font-medium transition-all ml-4 ${activeTab === 'bees' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'bg-white/5 text-gray-400 hover:text-white border border-transparent'}`}
               >
-                🐝 The Bees ({bees.length})
+                🐝 The Bees (3)
               </button>
               <button 
                 onClick={() => setActiveTab('warehouse')}
