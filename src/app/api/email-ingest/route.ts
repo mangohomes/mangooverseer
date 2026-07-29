@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
-import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     
     // Append the new email to the inboxEmails array using Firestore FieldValue arrayUnion
     await warehouseRef.set({
-      inboxEmails: admin.firestore.FieldValue.arrayUnion({
+      inboxEmails: FieldValue.arrayUnion({
         subject,
         body,
         sender: sender || 'Unknown',
