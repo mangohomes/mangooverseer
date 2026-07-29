@@ -32,7 +32,13 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
     if (settingsDoc.exists && settingsDoc.data()?.newConstructionUrls) {
       constructionUrlsStr = settingsDoc.data()?.newConstructionUrls;
     }
-    const targetUrls = constructionUrlsStr.split('\n').map(u => u.trim()).filter(u => u);
+    const targetUrls = constructionUrlsStr.split('\n').map(u => {
+      let url = u.trim();
+      if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+      return url;
+    }).filter(u => u);
 
     let scrapeData = "[LIVE SCRAPE RESULTS]\n\n";
 
