@@ -175,17 +175,24 @@ If the user asks a question that requires scanning all records (like finding cli
               });
             } else if (call.name === 'search_mls_data') {
               const queryStr = (call.args as any).query;
-              // Placeholder mock response for now since we don't have real MLS data yet
+              
+              // Fetch warehouse settings to get the real MLS data files
+              const settingsDoc = await adminDb.collection('settings').doc('warehouse').get();
+              let mlsDataText = "No MLS data has been uploaded to the warehouse.";
+              
+              if (settingsDoc.exists) {
+                const data = settingsDoc.data();
+                if (data?.mlsFiles && Object.keys(data.mlsFiles).length > 0) {
+                  mlsDataText = Object.entries(data.mlsFiles).map(([filename, content]) => `--- FILE: ${filename} ---\n${content}`).join('\n\n');
+                }
+              }
+              
               functionResponseParts.push({
                 functionResponse: {
                   name: call.name,
                   response: { 
-                    notice: "Real MLS data export is not yet wired up. Using mock data.",
-                    mockResults: [
-                      { address: "123 Ocean Blvd", price: 350000, beds: 3, baths: 2, status: "Active" },
-                      { address: "456 Palm Way", price: 385000, beds: 3, baths: 2, status: "Pending" },
-                      { address: "789 Dune Ct", price: 340000, beds: 3, baths: 2, status: "Sold" }
-                    ]
+                    notice: "Here is the raw MLS Export Data from the Data Warehouse.",
+                    mlsData: mlsDataText 
                   }
                 }
               });

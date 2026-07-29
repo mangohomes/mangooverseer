@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { collection, onSnapshot, query, orderBy, addDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, addDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 
 export default function Dashboard() {
@@ -24,10 +24,25 @@ export default function Dashboard() {
   const [syncingCRM, setSyncingCRM] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
 
-  // MLS Upload State
+  // Chat Feed Scroll
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (chatEndRef.current && activeTab === 'kittens') {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [tasks, activeTab, selectedKittenId]);
+
   const mlsInputRef = useRef<HTMLInputElement>(null);
   const [uploadingMls, setUploadingMls] = useState(false);
   const [mlsDragOver, setMlsDragOver] = useState(false);
+  const [mlsLastUpdated, setMlsLastUpdated] = useState<Date | null>(null);
+
+  // Warehouse Config State
+  const [newConstructionUrls, setNewConstructionUrls] = useState("https://horrycounty.org/planning/approvals\nhttps://drhorton.com/south-carolina/myrtle-beach");
+  const [geoFootprint, setGeoFootprint] = useState("https://mangohomes.com\nhttps://facebook.com/mangohomes\nhttps://instagram.com/mangohomes.sc");
+  const [savingSources, setSavingSources] = useState(false);
+  const [savingGeo, setSavingGeo] = useState(false);
 
   useEffect(() => {
     try {
@@ -45,10 +60,29 @@ export default function Dashboard() {
         setTasks(tasksData);
         setFirebaseError(false);
       }, (error) => {
-        console.warn("Firestore listener error (Likely missing config):", error);
         setFirebaseError(true);
       });
-      return () => unsubscribe();
+
+      const warehouseDoc = doc(db, 'settings', 'warehouse');
+      const unsubscribeWarehouse = onSnapshot(warehouseDoc, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data.mlsLastUpdated) {
+            setMlsLastUpdated(new Date(data.mlsLastUpdated));
+          }
+          if (data.newConstructionUrls !== undefined) {
+            setNewConstructionUrls(data.newConstructionUrls);
+          }
+          if (data.geoFootprint !== undefined) {
+            setGeoFootprint(data.geoFootprint);
+          }
+        }
+      });
+
+      return () => {
+        unsubscribe();
+        unsubscribeWarehouse();
+      };
     } catch (e) {
       console.warn("Firebase not configured:", e);
       setTimeout(() => setFirebaseError(true), 0);
@@ -282,17 +316,20 @@ export default function Dashboard() {
     }
     
     if (!files || files.length === 0) return;
-    const file = files[0];
     setUploadingMls(true);
     
     try {
-      const text = await file.text();
-      const content = text.substring(0, 15000);
+      const mlsFilesObj: any = {};
+      for (let i = 0; i < files.length; i++) {
+        const text = await files[i].text();
+        const content = text.substring(0, 30000); // 30k char limit per file
+        mlsFilesObj[files[i].name.replace(/[.#$/[\]]/g, '_')] = content;
+      }
       
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mlsData: content })
+        body: JSON.stringify({ mlsFiles: mlsFilesObj })
       });
       
       if (res.ok) {
@@ -305,6 +342,26 @@ export default function Dashboard() {
       alert("Error reading file.");
     }
     setUploadingMls(false);
+  };
+
+  const handleSaveSources = async () => {
+    setSavingSources(true);
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newConstructionUrls })
+    });
+    setSavingSources(false);
+  };
+
+  const handleSaveGeo = async () => {
+    setSavingGeo(true);
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ geoFootprint })
+    });
+    setSavingGeo(false);
   };
 
   const handleCRMSync = async () => {
@@ -565,6 +622,7 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                           )}
                         </div>
                       ))}
+                      <div ref={chatEndRef} />
                     </div>
 
                     {/* Chat Input */}
@@ -796,6 +854,11 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                   <button className="mt-6 px-6 py-2 bg-pink-600/20 hover:bg-pink-600/40 text-pink-300 rounded-lg text-sm font-medium transition-colors border border-pink-500/30 pointer-events-none">
                     Browse Files
                   </button>
+                  {mlsLastUpdated && (
+                    <div className="mt-6 inline-flex items-center gap-2 bg-green-500/10 text-green-400 px-4 py-2 rounded-full text-sm font-medium border border-green-500/20">
+                      ✅ Cache updated: {mlsLastUpdated.toLocaleString()}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -811,14 +874,19 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                 <div className="space-y-4">
                   <div className="bg-[#111] rounded-xl p-1.5 ring-1 ring-white/10 focus-within:ring-yellow-500/50 transition-all">
                     <textarea 
+                      value={newConstructionUrls}
+                      onChange={(e) => setNewConstructionUrls(e.target.value)}
                       placeholder="Paste Google Doc URLs or website links here (one per line)..." 
                       className="w-full bg-transparent px-4 py-3 outline-none placeholder:text-gray-600 focus:ring-0 text-white min-h-[150px] resize-y custom-scrollbar text-sm font-mono"
-                      defaultValue={"https://horrycounty.org/planning/approvals\nhttps://drhorton.com/south-carolina/myrtle-beach"}
                     />
                   </div>
                   <div className="flex justify-end">
-                    <button className="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-yellow-500/20">
-                      Save Sources
+                    <button 
+                      onClick={handleSaveSources}
+                      disabled={savingSources}
+                      className="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-yellow-800 disabled:text-gray-400 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-yellow-500/20"
+                    >
+                      {savingSources ? "Saving..." : "Save Sources"}
                     </button>
                   </div>
                 </div>
@@ -836,14 +904,19 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                 <div className="space-y-4">
                   <div className="bg-[#111] rounded-xl p-1.5 ring-1 ring-white/10 focus-within:ring-purple-500/50 transition-all">
                     <textarea 
+                      value={geoFootprint}
+                      onChange={(e) => setGeoFootprint(e.target.value)}
                       placeholder="Paste your Facebook, Instagram, LinkedIn, and website URLs here..." 
                       className="w-full bg-transparent px-4 py-3 outline-none placeholder:text-gray-600 focus:ring-0 text-white min-h-[150px] resize-y custom-scrollbar text-sm font-mono"
-                      defaultValue={"https://mangohomes.com\nhttps://facebook.com/mangohomes\nhttps://instagram.com/mangohomes.sc"}
                     />
                   </div>
                   <div className="flex justify-end">
-                    <button className="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-purple-500/20">
-                      Save Digital Footprint
+                    <button 
+                      onClick={handleSaveGeo}
+                      disabled={savingGeo}
+                      className="px-6 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800 disabled:text-gray-400 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-purple-500/20"
+                    >
+                      {savingGeo ? "Saving..." : "Save Digital Footprint"}
                     </button>
                   </div>
                 </div>

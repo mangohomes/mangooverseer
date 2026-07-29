@@ -19,6 +19,9 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
+    if (data.mlsFiles || data.mlsData) {
+      data.mlsLastUpdated = new Date().toISOString();
+    }
     await adminDb.collection('settings').doc('warehouse').set(data, { merge: true });
     return NextResponse.json({ success: true });
   } catch (error: any) {
