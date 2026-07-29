@@ -26,7 +26,13 @@ Your job is to scour provided websites and extract ANY new information specifica
 Focus specifically on Horry and Brunswick counties.
 
 FORMATTING REQUIREMENTS:
-Group all of your findings by **Builder** (e.g., Toll Brothers, D.R. Horton, Meritage Homes). Under each Builder, list their specific incentives, new neighborhoods, and move-in ready counts.
+Group all of your findings by **Builder**. For each builder, you MUST use this exact layout:
+
+**[Builder Name]**
+* **Incentives:** [List incentives or write "None found"]
+* **New Neighborhoods:** [List new phases/neighborhoods or write "None found"]
+* **Move in ready:** [List number of move-in ready homes or write "None found"]
+
 Summarize your findings in a few concise bullet points. Be extremely precise. DO NOT hallucinate.`;
 
     // Real Web Scraping Logic
