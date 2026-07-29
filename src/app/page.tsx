@@ -55,6 +55,7 @@ export default function Dashboard() {
   const [savingSources, setSavingSources] = useState(false);
   const [savingGeo, setSavingGeo] = useState(false);
   const [inboxEmailsCount, setInboxEmailsCount] = useState(0);
+  const [scrapingProgress, setScrapingProgress] = useState<{ current: number, total: number, active: boolean }>({ current: 0, total: 0, active: false });
 
   useEffect(() => {
     try {
@@ -224,14 +225,46 @@ export default function Dashboard() {
 
   const handleSimulateDailyRun = async (beeId: string) => {
     try {
-      const res = await fetch("/api/bees-trigger-daily", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ beeId })
+      const urls = newConstructionUrls.split('\n').map(u => {
+        let url = u.trim();
+        if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://' + url;
+        }
+        return url;
+      }).filter(u => u);
+
+      setScrapingProgress({ current: 0, total: urls.length, active: true });
+      let scrapedText = "";
+
+      for (let i = 0; i < urls.length; i++) {
+        setScrapingProgress(p => ({ ...p, current: i + 1 }));
+        try {
+          const proxyRes = await fetch('/api/firecrawl-proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: urls[i] })
+          });
+          const proxyData = await proxyRes.json();
+          scrapedText += proxyData.text || '';
+        } catch(e) {
+          scrapedText += `URL: ${urls[i]}\nStatus: Failed to fetch from proxy\n\n`;
+        }
+      }
+
+      setScrapingProgress({ current: urls.length, total: urls.length, active: false });
+
+      const res = await fetch('/api/bees-trigger-daily', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ beeId, scrapedText })
       });
-      if (!res.ok) alert("Failed to trigger daily run.");
+      if (!res.ok) {
+        const text = await res.text();
+        alert(`Failed to trigger daily run: ${res.status} - ${text}`);
+      }
     } catch (error) {
       console.error(error);
+      setScrapingProgress({ current: 0, total: 0, active: false });
     }
   };
 
@@ -242,7 +275,10 @@ export default function Dashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ beeId })
       });
-      if (!res.ok) alert("Failed to trigger weekly email.");
+      if (!res.ok) {
+        const text = await res.text();
+        alert(`Failed to trigger weekly email: ${res.status} - ${text}`);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -817,8 +853,8 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
 
                         {task.beeType === 'new-construction' && (
                           <div className="p-4 border-t border-white/5 bg-[#1a1a1a] flex gap-3">
-                            <button onClick={() => handleSimulateDailyRun(task.id)} className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-500/20 transition-all text-center">
-                              Simulate Daily Run
+                            <button onClick={() => handleSimulateDailyRun(task.id)} disabled={scrapingProgress.active} className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-500/20 transition-all text-center">
+                              {scrapingProgress.active ? `Scraping ${scrapingProgress.current}/${scrapingProgress.total}...` : 'Simulate Daily Run'}
                             </button>
                             <button onClick={() => handleSimulateWeeklyEmail(task.id)} className="flex-1 px-4 py-3 bg-pink-600 hover:bg-pink-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-pink-500/20 transition-all text-center">
                               Simulate Weekly Email

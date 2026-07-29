@@ -49,7 +49,7 @@ Output EXACTLY 5 highly actionable optimization tips formatted clearly. Be conci
       // Try to fetch up to 2 times
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          const firecrawlKey = process.env.FIRECRAWL_API_KEY || "fc-2cc18ea2015e4b988487f22f710e5492";
+          const firecrawlKey = process.env.FIRECRAWL_API_KEY;
           const fetchRes = await fetch('https://api.firecrawl.dev/v1/scrape', {
             method: 'POST',
             headers: {
