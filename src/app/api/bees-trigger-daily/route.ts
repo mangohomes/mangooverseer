@@ -24,6 +24,9 @@ Your job is to scour provided websites and extract ANY new information specifica
 4. The exact number of move-in ready (quick move-in) homes available per subdivision
 
 Focus specifically on Horry and Brunswick counties.
+
+FORMATTING REQUIREMENTS:
+Group all of your findings by **Builder** (e.g., Toll Brothers, D.R. Horton, Meritage Homes). Under each Builder, list their specific incentives, new neighborhoods, and move-in ready counts.
 Summarize your findings in a few concise bullet points. Be extremely precise. DO NOT hallucinate.`;
 
     // Real Web Scraping Logic
