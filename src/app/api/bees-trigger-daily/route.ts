@@ -45,7 +45,8 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
     if (inboxEmails.length > 0) {
       scrapeData += `[FORWARDED INBOX EMAILS]\n`;
       inboxEmails.forEach((email: any) => {
-        scrapeData += `From: ${email.sender}\nSubject: ${email.subject}\nDate: ${email.date}\nBody Snippet: ${email.body.substring(0, 3000)}\n\n`;
+        const bodyText = typeof email.body === 'string' ? email.body : '';
+        scrapeData += `From: ${email.sender}\nSubject: ${email.subject}\nDate: ${email.date}\nBody Snippet: ${bodyText.substring(0, 3000)}\n\n`;
       });
       scrapeData += `[END OF EMAILS]\n\n`;
       

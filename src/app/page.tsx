@@ -26,12 +26,23 @@ export default function Dashboard() {
 
   // Chat Feed Scroll
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const beeEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (chatEndRef.current && activeTab === 'kittens') {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    setTimeout(() => {
+      if (chatEndRef.current && activeTab === 'kittens') {
+        chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   }, [tasks, activeTab, selectedKittenId]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (beeEndRef.current && activeTab === 'bees') {
+        beeEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  }, [tasks, activeTab, selectedBeeId]);
 
   const mlsInputRef = useRef<HTMLInputElement>(null);
   const [uploadingMls, setUploadingMls] = useState(false);
@@ -614,15 +625,19 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                         <div key={task.id} className="space-y-4">
                           <div className="flex justify-end">
                              <div className="bg-indigo-600/80 text-white rounded-2xl rounded-tr-sm px-4 py-3 max-w-[85%] border border-indigo-500/30">
-                               <div className="font-bold text-sm mb-1 text-indigo-100">{task.title || "User Request"}</div>
+                               <div className="font-bold text-sm mb-1 text-indigo-100 flex items-center justify-between">
+                                 <span>{task.title || "User Request"}</span>
+                                 {task.createdAt && <span className="text-[9px] font-normal opacity-50 ml-3">{new Date(task.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
+                               </div>
                                <div className="text-sm">{task.description}</div>
                              </div>
                           </div>
                           {(task.status === 'completed' || task.status === 'failed' || task.status === 'needs-clarification' || task.status === 'in-progress') && (
                             <div className="flex justify-start">
                                <div className={`rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%] border ${task.status === 'failed' ? 'bg-red-500/10 border-red-500/20 text-red-200' : 'bg-[#161616] border-white/10 text-gray-200'}`}>
-                                  <div className="text-[10px] font-bold text-pink-400 mb-1 uppercase tracking-wider">
-                                    {selectedKittenId === 'data-entry' ? 'CRM Kitten' : 'Listing Kitten'}
+                                  <div className="text-[10px] font-bold text-pink-400 mb-1 uppercase tracking-wider flex items-center justify-between">
+                                    <span>{selectedKittenId === 'data-entry' ? 'CRM Kitten' : 'Listing Kitten'}</span>
+                                    {task.createdAt && <span className="font-normal opacity-50 ml-3">{new Date(task.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
                                   </div>
                                   {task.status === 'in-progress' ? (
                                     <div className="flex items-center gap-1.5 text-pink-400/70 text-sm">
@@ -738,7 +753,9 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                                   <div className="space-y-3">
                                     {task.weeklyFindings.map((finding: any, i: number) => (
                                       <div key={i} className="text-sm text-gray-300 border-l-2 border-indigo-500/50 pl-4 py-1 bg-white/[0.02] rounded-r-lg">
-                                        <span className="font-bold text-indigo-300 block mb-1">{new Date(finding.date).toLocaleDateString()}</span>
+                                        <span className="font-bold text-indigo-300 block mb-1">
+                                          {new Date(finding.date).toLocaleDateString()} at {new Date(finding.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                        </span>
                                         <div className="whitespace-pre-wrap">{finding.summary}</div>
                                       </div>
                                     ))}
@@ -795,6 +812,7 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                               </div>
                             )
                           )}
+                          <div ref={beeEndRef} />
                         </div>
 
                         {task.beeType === 'new-construction' && (
