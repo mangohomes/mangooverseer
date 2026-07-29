@@ -33,6 +33,8 @@ Focus specifically on Horry and Brunswick counties.
 At the very end of your response, add a single bullet point listing any sites that failed to fetch:
 * **Failed to Pull:** [List sites here, or write "None"]
 
+Note: Builders often label move-in ready homes differently. You MUST count any home that shows an 'Available For Sale [Date]', 'Now Selling', or has a specific listing price and address as a Move-In Ready home.
+
 Summarize your findings in a few concise bullet points. Be extremely precise. DO NOT hallucinate.`;
 
     // Real Web Scraping & Email Logic
@@ -119,7 +121,7 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
     contents.push({ role: 'user', parts: [{ text: `Here are the results of the automated web scan:\n\n${scrapeData}` }] });
 
     let response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-pro',
       contents,
       config: { systemInstruction }
     });
