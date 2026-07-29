@@ -35,8 +35,25 @@ At the very end of your response, add a single bullet point listing any sites th
 
 Summarize your findings in a few concise bullet points. Be extremely precise. DO NOT hallucinate.`;
 
-    // Real Web Scraping Logic
+    // Real Web Scraping & Email Logic
     const settingsDoc = await adminDb.collection('settings').doc('warehouse').get();
+    
+    let scrapeData = "[LIVE SCRAPE RESULTS]\n\n";
+
+    // 1. Process Inbox Emails
+    const inboxEmails = settingsDoc.exists && settingsDoc.data()?.inboxEmails ? settingsDoc.data()?.inboxEmails : [];
+    if (inboxEmails.length > 0) {
+      scrapeData += `[FORWARDED INBOX EMAILS]\n`;
+      inboxEmails.forEach((email: any) => {
+        scrapeData += `From: ${email.sender}\nSubject: ${email.subject}\nDate: ${email.date}\nBody Snippet: ${email.body.substring(0, 3000)}\n\n`;
+      });
+      scrapeData += `[END OF EMAILS]\n\n`;
+      
+      // Clear the emails from the database so they aren't processed again tomorrow
+      await adminDb.collection('settings').doc('warehouse').set({ inboxEmails: [] }, { merge: true });
+    }
+
+    // 2. Process Websites
     let constructionUrlsStr = "https://horrycounty.org/planning/approvals\nhttps://drhorton.com/south-carolina/myrtle-beach";
     if (settingsDoc.exists && settingsDoc.data()?.newConstructionUrls) {
       constructionUrlsStr = settingsDoc.data()?.newConstructionUrls;
@@ -48,8 +65,6 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
       }
       return url;
     }).filter(u => u);
-
-    let scrapeData = "[LIVE SCRAPE RESULTS]\n\n";
 
     for (const url of targetUrls) {
       let success = false;

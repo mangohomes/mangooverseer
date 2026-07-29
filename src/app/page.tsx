@@ -43,6 +43,7 @@ export default function Dashboard() {
   const [geoFootprint, setGeoFootprint] = useState("https://mangohomes.com\nhttps://facebook.com/mangohomes\nhttps://instagram.com/mangohomes.sc");
   const [savingSources, setSavingSources] = useState(false);
   const [savingGeo, setSavingGeo] = useState(false);
+  const [inboxEmailsCount, setInboxEmailsCount] = useState(0);
 
   useEffect(() => {
     try {
@@ -75,6 +76,9 @@ export default function Dashboard() {
           }
           if (data.geoFootprint !== undefined) {
             setGeoFootprint(data.geoFootprint);
+          }
+          if (data.inboxEmails !== undefined) {
+            setInboxEmailsCount(data.inboxEmails.length);
           }
         }
       });
@@ -869,6 +873,23 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                       ✅ Cache updated: {mlsLastUpdated.toLocaleString()}
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* EMAIL WEBHOOK WIDGET */}
+              <div className="bg-[#161616] border border-white/5 rounded-2xl p-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl">📧</div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">Inbox Cache (Zapier Webhook)</h2>
+                      <p className="text-sm text-gray-400">Emails waiting to be processed during the next Daily Run.</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-4xl font-black text-pink-500">{inboxEmailsCount}</div>
+                    <div className="text-xs text-gray-500 font-bold tracking-wider uppercase mt-1">CACHED EMAILS</div>
+                  </div>
                 </div>
               </div>
 
