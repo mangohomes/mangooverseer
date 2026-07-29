@@ -21,6 +21,7 @@ Your job is to scour provided websites and extract ANY new information specifica
 1. Discounted prices or price cuts on homes
 2. Builder incentives (e.g., closing costs, rate buydowns, free upgrades)
 3. New neighborhood approvals or new phase releases
+4. The exact number of move-in ready (quick move-in) homes available per subdivision
 
 Focus specifically on Horry and Brunswick counties.
 Summarize your findings in a few concise bullet points. Be extremely precise. DO NOT hallucinate.`;
