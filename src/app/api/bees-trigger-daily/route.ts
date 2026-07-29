@@ -25,13 +25,13 @@ Your job is to scour provided websites and extract ANY new information specifica
 
 Focus specifically on Horry and Brunswick counties.
 
-FORMATTING REQUIREMENTS:
-Group all of your findings by **Builder**. For each builder, you MUST use this exact layout:
-
 **Builder:** [Builder Name]
 **Incentives:** [List incentives or write "no"]
 **Move-In Ready:** [quantity and price range if possible, or "no"]
 **New Subdivisions or phases open:** [if so, what?. If no, put "no"]
+
+At the very end of your response, add a single bullet point listing any sites that failed to fetch:
+* **Failed to Pull:** [List sites here, or write "None"]
 
 Summarize your findings in a few concise bullet points. Be extremely precise. DO NOT hallucinate.`;
 
@@ -52,21 +52,36 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
     let scrapeData = "[LIVE SCRAPE RESULTS]\n\n";
 
     for (const url of targetUrls) {
-      try {
-        const fetchRes = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }});
-        if (fetchRes.ok) {
-          const html = await fetchRes.text();
-          const $ = cheerio.load(html);
-          
-          $('script, style, noscript, nav, footer').remove();
-          const bodyText = $('body').text().replace(/\s+/g, ' ').substring(0, 15000);
-          
-          scrapeData += `URL: ${url}\nContent Snippet: ${bodyText}\n\n`;
-        } else {
-          scrapeData += `URL: ${url}\nStatus: Could not fetch (HTTP ${fetchRes.status})\n\n`;
+      let success = false;
+      let lastError = '';
+      
+      // Try to fetch up to 2 times
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const fetchRes = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5" }});
+          if (fetchRes.ok) {
+            const html = await fetchRes.text();
+            const $ = cheerio.load(html);
+            
+            $('script, style, noscript, nav, footer').remove();
+            const bodyText = $('body').text().replace(/\s+/g, ' ').substring(0, 15000);
+            
+            scrapeData += `URL: ${url}\nContent Snippet: ${bodyText}\n\n`;
+            success = true;
+            break; // Exit retry loop on success
+          } else {
+            lastError = `HTTP ${fetchRes.status}`;
+            // Wait 1.5 seconds before retrying
+            await new Promise(r => setTimeout(r, 1500));
+          }
+        } catch (err: any) {
+          lastError = err.message;
+          await new Promise(r => setTimeout(r, 1500));
         }
-      } catch (err: any) {
-        scrapeData += `URL: ${url}\nStatus: Failed to fetch (${err.message})\n\n`;
+      }
+      
+      if (!success) {
+        scrapeData += `URL: ${url}\nStatus: Failed to fetch after 2 attempts (${lastError})\n\n`;
       }
     }
 

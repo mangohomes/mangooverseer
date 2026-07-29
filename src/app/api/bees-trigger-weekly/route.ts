@@ -36,6 +36,9 @@ Group all of your findings by **Builder**. For each builder, you MUST use this e
 **Move-In Ready:** [quantity and price range if possible, or "no"]
 **New Subdivisions or phases open:** [if so, what?. If no, put "no"]
 
+At the very end of the email, add a single bullet point summarizing any websites that consistently failed to fetch:
+* **Failed to Pull:** [List sites here, or write "None"]
+
 Do not use any other layout.`;
 
     const rawDataStr = findings.map((f: any) => `Date: ${f.date}\nSummary: ${f.summary}`).join('\n\n');
