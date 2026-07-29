@@ -346,22 +346,32 @@ export default function Dashboard() {
 
   const handleSaveSources = async () => {
     setSavingSources(true);
-    await fetch('/api/settings', {
+    const res = await fetch('/api/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newConstructionUrls })
     });
     setSavingSources(false);
+    if (res.ok) {
+      alert("New Construction Sources saved successfully!");
+    } else {
+      alert("Failed to save sources.");
+    }
   };
 
   const handleSaveGeo = async () => {
     setSavingGeo(true);
-    await fetch('/api/settings', {
+    const res = await fetch('/api/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ geoFootprint })
     });
     setSavingGeo(false);
+    if (res.ok) {
+      alert("Digital Footprint saved successfully!");
+    } else {
+      alert("Failed to save digital footprint.");
+    }
   };
 
   const handleCRMSync = async () => {
