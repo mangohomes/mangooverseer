@@ -32,7 +32,7 @@ Output EXACTLY 5 highly actionable optimization tips formatted clearly. Be conci
     if (settingsDoc.exists && settingsDoc.data()?.geoFootprint) {
       geoFootprintStr = settingsDoc.data()?.geoFootprint;
     }
-    const targetUrls = geoFootprintStr.split('\\n').map(u => u.trim()).filter(u => u);
+    const targetUrls = geoFootprintStr.split('\n').map(u => u.trim()).filter(u => u);
 
     let scrapeData = "[LIVE DIGITAL FOOTPRINT AUDIT RESULTS]\n\n";
 

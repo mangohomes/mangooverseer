@@ -17,9 +17,12 @@ export async function POST(req: Request) {
     const bee = beeDoc.data();
 
     const systemInstruction = `You are a Daily New Construction Residential Expert.
-Your job is to scour provided websites and extract ANY new information regarding builder incentives or new neighborhood approvals specifically in Horry and Brunswick counties.
-Use the scrape_urls tool to gather today's data.
+Your job is to scour provided websites and extract ANY new information specifically regarding:
+1. Discounted prices or price cuts on homes
+2. Builder incentives (e.g., closing costs, rate buydowns, free upgrades)
+3. New neighborhood approvals or new phase releases
 
+Focus specifically on Horry and Brunswick counties.
 Summarize your findings in a few concise bullet points. Be extremely precise. DO NOT hallucinate.`;
 
     // Real Web Scraping Logic
@@ -28,7 +31,7 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
     if (settingsDoc.exists && settingsDoc.data()?.newConstructionUrls) {
       constructionUrlsStr = settingsDoc.data()?.newConstructionUrls;
     }
-    const targetUrls = constructionUrlsStr.split('\\n').map(u => u.trim()).filter(u => u);
+    const targetUrls = constructionUrlsStr.split('\n').map(u => u.trim()).filter(u => u);
 
     let scrapeData = "[LIVE SCRAPE RESULTS]\n\n";
 
@@ -40,7 +43,7 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
           const $ = cheerio.load(html);
           
           $('script, style, noscript, nav, footer').remove();
-          const bodyText = $('body').text().replace(/\s+/g, ' ').substring(0, 2000);
+          const bodyText = $('body').text().replace(/\s+/g, ' ').substring(0, 15000);
           
           scrapeData += `URL: ${url}\nContent Snippet: ${bodyText}\n\n`;
         } else {
