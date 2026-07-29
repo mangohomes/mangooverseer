@@ -43,27 +43,48 @@ Output EXACTLY 5 highly actionable optimization tips formatted clearly. Be conci
     let scrapeData = "[LIVE DIGITAL FOOTPRINT AUDIT RESULTS]\n\n";
 
     for (const url of targetUrls) {
-      try {
-        const fetchRes = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }});
-        if (fetchRes.ok) {
-          const html = await fetchRes.text();
-          const $ = cheerio.load(html);
+      let success = false;
+      let lastError = '';
+      
+      // Try to fetch up to 2 times
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const firecrawlKey = process.env.FIRECRAWL_API_KEY || "fc-2cc18ea2015e4b988487f22f710e5492";
+          const fetchRes = await fetch('https://api.firecrawl.dev/v1/scrape', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${firecrawlKey}`
+            },
+            body: JSON.stringify({ url: url })
+          });
           
-          // Remove scripts and styles
-          $('script, style, noscript').remove();
-          
-          // Extract text and trim down to a reasonable chunk for the AI
-          const bodyText = $('body').text().replace(/\s+/g, ' ').substring(0, 1500);
-          
-          const metaTitle = $('title').text();
-          const metaDesc = $('meta[name="description"]').attr('content') || 'No meta description';
-          
-          scrapeData += `URL: ${url}\nTitle: ${metaTitle}\nMeta: ${metaDesc}\nContent Snippet: ${bodyText}\n\n`;
-        } else {
-          scrapeData += `URL: ${url}\nStatus: Could not fetch (HTTP ${fetchRes.status}). Ensure URL is publicly accessible or has no bot protection.\n\n`;
+          if (fetchRes.ok) {
+            const json = await fetchRes.json();
+            if (json.success && json.data && json.data.markdown) {
+              const bodyText = json.data.markdown.substring(0, 15000);
+              const metaTitle = json.data.metadata?.title || 'No Title';
+              const metaDesc = json.data.metadata?.description || 'No Meta Description';
+              scrapeData += `URL: ${url}\nTitle: ${metaTitle}\nMeta: ${metaDesc}\nContent Snippet: ${bodyText}\n\n`;
+              success = true;
+              break; // Exit retry loop on success
+            } else {
+              lastError = "Firecrawl failed to extract markdown";
+              await new Promise(r => setTimeout(r, 1500));
+            }
+          } else {
+            lastError = `HTTP ${fetchRes.status}`;
+            // Wait 1.5 seconds before retrying
+            await new Promise(r => setTimeout(r, 1500));
+          }
+        } catch (err: any) {
+          lastError = err.message;
+          await new Promise(r => setTimeout(r, 1500));
         }
-      } catch (err: any) {
-        scrapeData += `URL: ${url}\nStatus: Failed to fetch (${err.message})\n\n`;
+      }
+      
+      if (!success) {
+        scrapeData += `URL: ${url}\nStatus: Failed to fetch after 2 attempts (${lastError})\n\n`;
       }
     }
 

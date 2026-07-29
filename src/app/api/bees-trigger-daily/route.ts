@@ -58,17 +58,27 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
       // Try to fetch up to 2 times
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          const fetchRes = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5" }});
+          const firecrawlKey = process.env.FIRECRAWL_API_KEY || "fc-2cc18ea2015e4b988487f22f710e5492";
+          const fetchRes = await fetch('https://api.firecrawl.dev/v1/scrape', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${firecrawlKey}`
+            },
+            body: JSON.stringify({ url: url })
+          });
+          
           if (fetchRes.ok) {
-            const html = await fetchRes.text();
-            const $ = cheerio.load(html);
-            
-            $('script, style, noscript, nav, footer').remove();
-            const bodyText = $('body').text().replace(/\s+/g, ' ').substring(0, 15000);
-            
-            scrapeData += `URL: ${url}\nContent Snippet: ${bodyText}\n\n`;
-            success = true;
-            break; // Exit retry loop on success
+            const json = await fetchRes.json();
+            if (json.success && json.data && json.data.markdown) {
+              const bodyText = json.data.markdown.substring(0, 15000);
+              scrapeData += `URL: ${url}\nContent Snippet: ${bodyText}\n\n`;
+              success = true;
+              break; // Exit retry loop on success
+            } else {
+              lastError = "Firecrawl failed to extract markdown";
+              await new Promise(r => setTimeout(r, 1500));
+            }
           } else {
             lastError = `HTTP ${fetchRes.status}`;
             // Wait 1.5 seconds before retrying
