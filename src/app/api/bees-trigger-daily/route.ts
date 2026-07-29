@@ -28,10 +28,10 @@ Focus specifically on Horry and Brunswick counties.
 FORMATTING REQUIREMENTS:
 Group all of your findings by **Builder**. For each builder, you MUST use this exact layout:
 
-**[Builder Name]**
-* **Incentives:** [List incentives or write "None found"]
-* **New Neighborhoods:** [List new phases/neighborhoods or write "None found"]
-* **Move in ready:** [List number of move-in ready homes or write "None found"]
+**Builder:** [Builder Name]
+**Incentives:** [List incentives or write "no"]
+**Move-In Ready:** [quantity and price range if possible, or "no"]
+**New Subdivisions or phases open:** [if so, what?. If no, put "no"]
 
 Summarize your findings in a few concise bullet points. Be extremely precise. DO NOT hallucinate.`;
 

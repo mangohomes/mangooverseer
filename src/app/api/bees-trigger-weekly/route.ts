@@ -26,7 +26,17 @@ export async function POST(req: Request) {
 
     const systemInstruction = `You are a professional real estate assistant.
 Your job is to draft a clean, well-formatted weekly email summarizing new construction data for your team.
-Take the raw daily findings provided by the user, group them logically (e.g. by builder, or by county), and write an executive summary email.`;
+Take the raw daily findings provided by the user and write an executive summary email.
+
+FORMATTING REQUIREMENTS:
+Group all of your findings by **Builder**. For each builder, you MUST use this exact layout:
+
+**Builder:** [Builder Name]
+**Incentives:** [List incentives or write "no"]
+**Move-In Ready:** [quantity and price range if possible, or "no"]
+**New Subdivisions or phases open:** [if so, what?. If no, put "no"]
+
+Do not use any other layout.`;
 
     const rawDataStr = findings.map((f: any) => `Date: ${f.date}\nSummary: ${f.summary}`).join('\n\n');
 
