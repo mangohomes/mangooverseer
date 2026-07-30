@@ -12,23 +12,31 @@ export async function POST(req: Request) {
 
     const ai = new GoogleGenAI({ apiKey });
     
-    const responseStream = await ai.models.generateContentStream({
-      model: 'gemini-2.5-flash',
-      contents,
-      config: { systemInstruction }
-    });
-
     const stream = new ReadableStream({
       async start(controller) {
+        // Defeat Netlify's 10s inactivity load balancer timeout by streaming empty spaces 
+        // every 2 seconds until Gemini finishes thinking and yields the first real chunk.
+        const heartbeat = setInterval(() => {
+          controller.enqueue(new TextEncoder().encode(' '));
+        }, 2000);
+
         try {
+          const responseStream = await ai.models.generateContentStream({
+            model: 'gemini-2.5-flash',
+            contents,
+            config: { systemInstruction }
+          });
+
           for await (const chunk of responseStream) {
             if (chunk.text) {
               controller.enqueue(new TextEncoder().encode(chunk.text));
             }
           }
-          controller.close();
         } catch (e) {
           controller.error(e);
+        } finally {
+          clearInterval(heartbeat);
+          controller.close();
         }
       }
     });

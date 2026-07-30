@@ -314,6 +314,7 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
         finalSummary = data.text || '';
       }
 
+      finalSummary = finalSummary.trim();
       if (!finalSummary) throw new Error("Gemini returned an empty summary.");
 
       // 4. Save to Firebase
