@@ -12,17 +12,33 @@ export async function POST(req: Request) {
 
     const ai = new GoogleGenAI({ apiKey });
     
-    let response = await ai.models.generateContent({
+    const responseStream = await ai.models.generateContentStream({
       model: 'gemini-2.5-flash',
       contents,
       config: { systemInstruction }
     });
 
-    if (!response.text) {
-        throw new Error(`Empty response from Gemini. Finish reason: ${response.candidates?.[0]?.finishReason}`);
-    }
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of responseStream) {
+            if (chunk.text) {
+              controller.enqueue(new TextEncoder().encode(chunk.text));
+            }
+          }
+          controller.close();
+        } catch (e) {
+          controller.error(e);
+        }
+      }
+    });
 
-    return NextResponse.json({ success: true, text: response.text });
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain',
+        'Cache-Control': 'no-cache, no-transform',
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

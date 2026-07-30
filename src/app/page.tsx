@@ -300,8 +300,21 @@ Summarize your findings in a few concise bullet points. Be extremely precise. DO
         throw new Error(`Gemini Error: ${geminiRes.status} - ${text}`);
       }
       
-      const geminiData = await geminiRes.json();
-      const finalSummary = geminiData.text;
+      let finalSummary = '';
+      if (geminiRes.body) {
+        const reader = geminiRes.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          finalSummary += decoder.decode(value, { stream: true });
+        }
+      } else {
+        const data = await geminiRes.json();
+        finalSummary = data.text || '';
+      }
+
+      if (!finalSummary) throw new Error("Gemini returned an empty summary.");
 
       // 4. Save to Firebase
       const res = await fetch('/api/bees-trigger-daily', {
