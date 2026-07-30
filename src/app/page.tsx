@@ -234,8 +234,14 @@ export default function Dashboard() {
       }).filter(u => u);
 
       setScrapingProgress({ current: 0, total: urls.length, active: true });
-      let scrapedText = "";
+      
+      // 1. Get Inbox Emails
+      const inboxRes = await fetch('/api/bees-get-inbox', { method: 'POST' });
+      const inboxData = await inboxRes.json();
+      let scrapeData = inboxData.text || '';
 
+      // 2. Scrape URLs
+      let scrapedText = "";
       for (let i = 0; i < urls.length; i++) {
         setScrapingProgress(p => ({ ...p, current: i + 1 }));
         try {
@@ -250,20 +256,68 @@ export default function Dashboard() {
           scrapedText += `URL: ${urls[i]}\nStatus: Failed to fetch from proxy\n\n`;
         }
       }
+      
+      scrapeData += scrapedText;
+      
+      // 3. Generate Content via Edge Proxy
+      setScrapingProgress(p => ({ ...p, current: p.total + 1 })); // current > total means Analyzing
 
-      setScrapingProgress({ current: urls.length, total: urls.length, active: false });
+      const systemInstruction = `You are a Daily New Construction Residential Expert.
+Your job is to scour provided websites and extract ANY new information specifically regarding:
+1. Discounted prices or price cuts on homes
+2. Builder incentives (e.g., closing costs, rate buydowns, free upgrades)
+3. New neighborhood approvals or new phase releases
+4. The exact number of move-in ready (quick move-in) homes available per subdivision
 
+Focus specifically on Horry and Brunswick counties.
+
+**Builder:** [Builder Name]
+**Incentives:** [List incentives or write "no"]
+**Move-In Ready:** [quantity and price range if possible, or "no"]
+**New Subdivisions or phases open:** [if so, what?. If no, put "no"]
+
+At the very end of your response, add a single bullet point listing any sites that failed to fetch:
+* **Failed to Pull:** [List sites here, or write "None"]
+
+Note: Builders often label move-in ready homes differently. You MUST count any home that shows an 'Available For Sale [Date]', 'Now Selling', or has a specific listing price and address as a Move-In Ready home.
+
+Summarize your findings in a few concise bullet points. Be extremely precise. DO NOT hallucinate.`;
+
+      const contents = [
+        { role: 'user', parts: [{ text: "Run today's daily scrape for Horry and Brunswick county new construction data. Use your tools to check the mock URLs." }] },
+        { role: 'model', parts: [{ text: "I will now scrape the target new construction websites." }] },
+        { role: 'user', parts: [{ text: `Here are the results of the automated web scan:\n\n${scrapeData}` }] }
+      ];
+
+      const geminiRes = await fetch('/api/gemini-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ systemInstruction, contents })
+      });
+      
+      if (!geminiRes.ok) {
+        const text = await geminiRes.text();
+        throw new Error(`Gemini Error: ${geminiRes.status} - ${text}`);
+      }
+      
+      const geminiData = await geminiRes.json();
+      const finalSummary = geminiData.text;
+
+      // 4. Save to Firebase
       const res = await fetch('/api/bees-trigger-daily', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ beeId, scrapedText })
+        body: JSON.stringify({ beeId, finalSummary })
       });
       if (!res.ok) {
         const text = await res.text();
-        alert(`Failed to trigger daily run: ${res.status} - ${text}`);
+        throw new Error(`Firebase Save Error: ${res.status} - ${text}`);
       }
-    } catch (error) {
+      
+      setScrapingProgress({ current: 0, total: 0, active: false });
+    } catch (error: any) {
       console.error(error);
+      alert(`Failed to trigger daily run: ${error.message}`);
       setScrapingProgress({ current: 0, total: 0, active: false });
     }
   };
@@ -854,7 +908,7 @@ Do Not Wants: ${Array.isArray(intakeData.doNotWants) ? intakeData.doNotWants.joi
                         {task.beeType === 'new-construction' && (
                           <div className="p-4 border-t border-white/5 bg-[#1a1a1a] flex gap-3">
                             <button onClick={() => handleSimulateDailyRun(task.id)} disabled={scrapingProgress.active} className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-500/20 transition-all text-center">
-                              {scrapingProgress.active ? `Scraping ${scrapingProgress.current}/${scrapingProgress.total}...` : 'Simulate Daily Run'}
+                              {scrapingProgress.active ? (scrapingProgress.current > scrapingProgress.total ? 'Analyzing with AI...' : `Scraping ${scrapingProgress.current}/${scrapingProgress.total}...`) : 'Simulate Daily Run'}
                             </button>
                             <button onClick={() => handleSimulateWeeklyEmail(task.id)} className="flex-1 px-4 py-3 bg-pink-600 hover:bg-pink-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-pink-500/20 transition-all text-center">
                               Simulate Weekly Email
