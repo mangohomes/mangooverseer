@@ -271,6 +271,8 @@ Your job is to scour provided websites and extract ANY new information specifica
 
 Focus specifically on Horry and Brunswick counties.
 
+CRITICAL RULE: You MUST ONLY extract CURRENT, ACTIVE data. Absolutely DO NOT include offers, incentives, or promotions that explicitly indicate they are expired or from past years (e.g., 2023, 2024, 2025). The current year is 2026. If an offer lists dates that have passed, IGNORE IT COMPLETELY.
+
 **Builder:** [Builder Name]
 **Incentives:** [List incentives or write "no"]
 **Move-In Ready:** [quantity and price range if possible, or "no"]
